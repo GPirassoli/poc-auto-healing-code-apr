@@ -20,7 +20,7 @@ Python 3.10 ou superior (utiliza apenas bibliotecas nativas da Standard Library,
 
 Clone o repositório e execute o script principal:
 ```bash
-git clone https://github.com/SEU-USUARIO/poc-auto-healing-code-apr.git
+git clone https://github.com/GPirassoli/poc-auto-healing-code-apr
 cd poc-auto-healing-code-apr
 python auto_heal_poc.py
 ```
