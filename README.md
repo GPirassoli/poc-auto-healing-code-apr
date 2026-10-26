@@ -5,7 +5,7 @@
 
 ---
 
-## 📌 1. Visão Geral do Projeto
+## 1. Visão Geral do Projeto
 
 Este repositório contém a implementação prática de um motor de **Auto-Healing Code** focado em **Reparo Automatizado de Programas (*Automated Program Repair* — APR)** em tempo de execução (*runtime*).
 
@@ -13,7 +13,7 @@ Diferente de abordagens tradicionais de infraestrutura (como orquestradores de c
 
 ---
 
-## 🏗️ 2. Arquitetura MAPE-K e Funcionamento Interno
+## 2. Arquitetura MAPE-K e Funcionamento Interno
 
 A aplicação opera sob quatro etapas coordenadas e sequenciais:
 ```
@@ -52,7 +52,7 @@ A aplicação opera sob quatro etapas coordenadas e sequenciais:
 
 ---
 
-## 💼 3. O Cenário de Exemplo: Processamento de Lote Financeiro
+## 3. O Cenário de Exemplo: Processamento de Lote Financeiro
 
 A PoC simula um módulo crítico de processamento de pagamentos: `calcular_ticket_medio_liquido(lote: dict, total_transacoes: int)`.
 
@@ -64,4 +64,61 @@ def calcular_ticket_medio_liquido(lote: dict, total_transacoes: int) -> float:
     # Defeito 2: Divide diretamente sem validar se 'total_transacoes' é zero (ZeroDivisionError)
     valor_liquido = lote["valor_bruto"] - lote["desconto"]
     return round(valor_liquido / total_transacoes, 2)
+```
+### O Oráculo de Verificação Multi-Teste (ORACLE_TEST_SUITE)
+Para impedir que a IA forneça soluções que apenas mascarem a falha (retornando 0.0 para qualquer entrada), o oráculo exige:
+Testes PASS_TO_PASS (Regressão de Negócio):
+  Lote {"valor_bruto": 1000.0, "desconto": 100.0} com 9 transações $\rightarrow$ Deve retornar 100.0.
+  Lote {"valor_bruto": 250.0, "desconto": 50.0} com 4 transações $\rightarrow$ Deve retornar 50.0.
+Testes FAIL_TO_PASS (Casos de Borda e Falha):
+  Lote {"valor_bruto": 500.0} (sem chave 'desconto') com 5 transações $\rightarrow$ Deve retornar 100.0. 
+  Lote {"valor_bruto": 500.0, "desconto": 50.0} com 0 transações $\rightarrow$ Deve retornar 0.0 (sem disparar divisão por zero).
+
+## 4. Como Executar
+
+### Pré-requisitos
+```
+Python 3.10 ou superior.
+(Opcional) Chave de API gratuita do Google AI Studio para executar via IA real na nuvem.
+```
+
+### Instalação das Dependências
+Para habilitar a integração com o modelo Gemini real:
+
+```Bash
+pip install google-genai
+```
+(Nota: O projeto utiliza primordialmente a biblioteca padrão do Python: ast, inspect, traceback, difflib, textwrap).
+
+### Execução no Modo 1: Com IA Real (Google Gemini 3.8 Flash)
+Obtenha uma chave gratuita no Google AI Studio.
+
+Defina a variável de ambiente no seu terminal:
+
+Linux / macOS / Codespaces:
+
+```Bash
+export GEMINI_API_KEY="sua_chave_aqui"
+python auto_heal_poc.py
+```
+
+Windows (PowerShell):
+
+```PowerShell
+$env:GEMINI_API_KEY="sua_chave_aqui"
+python auto_heal_poc.py
+```
+
+Windows (Prompt de Comando CMD):
+
+```DOS
+set GEMINI_API_KEY=sua_chave_aqui
+python auto_heal_poc.py
+```
+
+### Execução no Modo 2: Sem Chave de API (Fallback Determinístico para Correção Offline)
+Caso o script seja executado sem a variável GEMINI_API_KEY, ele acionará automaticamente o modo de fallback, demonstrando o ciclo completo do motor sem depender de conexão externa:
+
+```Bash
+python auto_heal_poc.py
 ```
