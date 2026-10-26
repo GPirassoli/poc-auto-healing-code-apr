@@ -1,7 +1,7 @@
 # Prova de Conceito (PoC): Arquitetura MAPE-K de Auto-Healing Code em Python
 
 > **Repositório acadêmico desenvolvido para a disciplina de Engenharia de Software (Prospecção Teórica e Tecnológica).**  
-> **Tema:** Auto-healing Code: Uso de IA para detecção e correção autônoma de falhas em tempo real (Tópico 5: Engenharia de Software com IA).
+> **Tema:** Auto-healing Code: Uso de IA para detecção e correção autônoma de falhas em tempo real (Tópico 36: Engenharia de Software com IA).
 
 ---
 
