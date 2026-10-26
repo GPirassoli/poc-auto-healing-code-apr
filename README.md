@@ -16,7 +16,7 @@ Diferente de abordagens tradicionais de infraestrutura (como orquestradores de c
 ## 🏗️ 2. Arquitetura MAPE-K e Funcionamento Interno
 
 A aplicação opera sob quatro etapas coordenadas e sequenciais:
-
+```
               ┌──────────────────────────────────────────────┐
               │                 KNOWLEDGE                    │
               │   - Oráculo de Testes (ORACLE_TEST_SUITE)    │
@@ -38,6 +38,7 @@ A aplicação opera sob quatro etapas coordenadas e sequenciais:
                              │  3. Bateria Oráculo (PASS & FAIL)    │
                              │  4. Hot-Swap em RAM & Unified Diff   │
                              └──────────────────────────────────────┘
+```
 
 1. **Monitor (`@auto_heal`):** O decorador intercepta exceções em tempo de execução (`KeyError`, `ZeroDivisionError`) antes que o processo da aplicação seja derrubado.
 2. **Analyze (`inspect` & `traceback`):** O motor extrai dinamicamente o código-fonte textual da função defeituosa, sua assinatura, os argumentos exatos que provocaram o *crash* e o *stack trace* isolado da falha.
