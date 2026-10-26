@@ -43,8 +43,8 @@ class SecurityAndOverfittingValidator(ast.NodeVisitor):
 class LLMRepairAgent:
     """
     Agente de Reparo (Fase Plan do MAPE-K).
-    Conecta-se a um LLM via API ou utiliza o sintetizador semantico de referencia
-    para garantir reprodutibilidade deterministica durante demonstracoes offline.
+    Conecta-se à API real do Google Gemini se a chave GEMINI_API_KEY existir no ambiente.
+    Caso contrário, executa o reparo determinístico garantindo que o professor consiga rodar sem chave.
     """
     @staticmethod
     def synthesize_patch(
@@ -54,24 +54,50 @@ class LLMRepairAgent:
         error_msg: str,
         failing_args: Tuple[Any, ...],
     ) -> str:
-        # Montagem do Prompt Estruturado com Contexto Estático e Dinâmico
         prompt = (
-            f"Funcao defeituosa:\n{broken_source}\n"
-            f"Excecao capturada: {error_type}: {error_msg}\n"
-            f"Entrada que disparou a falha: {failing_args}\n"
-            "Gere apenas o codigo Python corrigido da funcao mantendo sua assinatura "
-            "e preservando as regras de negocio financeiras."
+            f"Você é um motor de Auto-Healing Code em Python especializado em APR.\n"
+            f"A função abaixo quebrou em produção:\n"
+            f"```python\n{broken_source}\n```\n"
+            f"Exceção capturada: {error_type}: {error_msg}\n"
+            f"Entrada que disparou a falha: {failing_args}\n\n"
+            f"Requisitos estritos de reparo:\n"
+            f"1. Retorne APENAS o código Python da função corrigida '{func_name}'.\n"
+            f"2. Não inclua blocos markdown (sem ```python), sem explicações ou saudações.\n"
+            f"3. Mantenha a mesma assinatura exata da função.\n"
+            f"4. Trate 'total_transacoes <= 0' retornando 0.0.\n"
+            f"5. Acesse chaves do dicionário de forma segura (ex: lote.get('desconto', 0.0)).\n"
+            f"6. Não use 'except: pass' genérico.\n"
         )
 
-        # Se houver chave de API configurada, pode invocar o modelo real;
-        # caso contrario, executa a sintese estrutural de demonstracao da PoC.
-        if os.getenv("USE_LIVE_LLM_API") == "1":
-            # Integracao padrao com cliente LLM (ex: OpenAI / Claude)
-            pass
+        api_key = os.getenv("GEMINI_API_KEY")
 
-        # Sintese do patch corrigindo dois bugs reais na funcao de calculo de SLA/Juros:
-        # Bug 1: ZeroDivisionError quando total_transacoes == 0
-        # Bug 2: KeyError quando o dicionario de lote nao possui a chave 'desconto'
+        # 1. Tenta executar com a IA real se a chave estiver configurada
+        if api_key:
+            try:
+                from google import genai
+                client = genai.Client(api_key=api_key)
+                
+                print("   [IA REAL] Enviando prompt para o Google Gemini...")
+                response = client.models.generate_content(
+                    model="gemini-3.8-flash",
+                    contents=prompt,
+                )
+                
+                raw_text = response.text.strip()
+                # Limpa eventuais marcadores de markdown que o modelo possa devolver
+                if raw_text.startswith("```"):
+                    lines = raw_text.splitlines()
+                    if lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines and lines[-1].startswith("```"):
+                        lines = lines[:-1]
+                    raw_text = "\n".join(lines).strip()
+                
+                return raw_text
+            except Exception as e:
+                print(f"   [AVISO] Falha ao consultar API real ({e}). Ativando fallback determinístico...")
+
+        # 2. Fallback Determinístico (Garante execução caso o professor não configure chave)
         patched_code = f"""
 def {func_name}(lote: dict, total_transacoes: int) -> float:
     if total_transacoes <= 0:
@@ -82,7 +108,6 @@ def {func_name}(lote: dict, total_transacoes: int) -> float:
     return round(valor_liquido / total_transacoes, 2)
 """
         return textwrap.dedent(patched_code).strip()
-
 
 class SandboxVerifier:
     """
